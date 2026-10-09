@@ -31,9 +31,9 @@ export const isSupabaseConfigured = (): boolean => {
 // Create client with sanitized configuration
 export const supabase = isSupabaseConfigured()
   ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-      },
-    })
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  })
   : null;
