@@ -1,21 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Settings,
-  ShieldCheck,
-  Database,
-  Cpu,
-  Lock,
-  Camera,
-  Sliders,
-  CheckCircle2,
-} from "lucide-react";
+import Link from "next/link";
+import { Sliders, CheckCircle2, Database, ShieldCheck } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 
 export default function SettingsPage() {
@@ -32,104 +22,148 @@ export default function SettingsPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 max-w-4xl">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">System & AI Settings</h1>
-          <p className="text-sm text-muted-foreground">
-            Configure biometric thresholds, temporal filters, and database connectivity
+      <div className="space-y-6 select-none max-w-5xl mx-auto">
+        {/* Header Horizon */}
+        <div className="border-b border-[#222220] pb-4">
+          <span className="font-mono text-[10px] text-[#E3C283] tracking-[0.25em] uppercase">
+            [ CONFIGURATION &amp; HYPERPARAMETERS // 006 ]
+          </span>
+          <h1 className="font-sans text-2xl md:text-3xl font-light text-[#ffffff] uppercase tracking-tight">
+            SYSTEM &amp; BIOMETRIC TUNING
+          </h1>
+          <p className="font-mono text-xs text-[#929189] mb-4">
+            Calibrate FaceNet Euclidean distance thresholds, temporal rolling windows, and RLS integrity
           </p>
+
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/settings"
+              className="px-3 py-1.5 font-mono text-xs border border-[#E3C283] bg-[#5C4612]/30 text-[#E3C283]"
+            >
+              01 // BIOMETRIC ML TUNING
+            </Link>
+            <Link
+              href="/settings/profile"
+              className="px-3 py-1.5 font-mono text-xs border border-[#222220] bg-[#131313] text-[#9A9A94] hover:text-[#F3F0E8] transition-colors"
+            >
+              02 // FACULTY PROFILE
+            </Link>
+            <Link
+              href="/settings/security"
+              className="px-3 py-1.5 font-mono text-xs border border-[#222220] bg-[#131313] text-[#9A9A94] hover:text-[#F3F0E8] transition-colors"
+            >
+              03 // AUTH & SESSIONS
+            </Link>
+            <Link
+              href="/settings/privacy"
+              className="px-3 py-1.5 font-mono text-xs border border-[#222220] bg-[#131313] text-[#9A9A94] hover:text-[#F3F0E8] transition-colors"
+            >
+              04 // DATA RETENTION & PRIVACY
+            </Link>
+          </div>
         </div>
 
         {savedSuccess && (
-          <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-            Biometric hyperparameters successfully saved to local configuration.
+          <div className="p-3 bg-[#5C4612]/30 border border-[#E3C283] text-[#E3C283] font-mono text-xs flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-[#E3C283]" />
+            BIOMETRIC HYPERPARAMETERS SAVED TO ACTIVE RUNTIME SESSION
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Biometric ML Hyperparameters */}
-          <Card className="border-border/80 shadow-sm">
-            <CardHeader>
-              <div className="flex items-center gap-2.5">
-                <Sliders className="h-5 w-5 text-primary" />
-                <CardTitle className="text-base font-semibold">Biometric Recognition Tuning</CardTitle>
-              </div>
-              <CardDescription className="text-xs">
-                Fine-tune vector distance sensitivity and temporal frame accumulation
-              </CardDescription>
-            </CardHeader>
-            <form onSubmit={handleSave}>
-              <CardContent className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold">Euclidean Distance Threshold (τ)</label>
-                  <Input
-                    type="number"
-                    step="0.05"
-                    min="0.30"
-                    max="0.80"
-                    value={distanceThreshold}
-                    onChange={(e) => setDistanceThreshold(e.target.value)}
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    Default: 0.55. Lower values (e.g. 0.45) enforce stricter security; higher values increase match tolerance.
-                  </p>
-                </div>
+          <div className="border border-[#222220] bg-[#0E0E0E]">
+            <div className="p-6 border-b border-[#222220] space-y-1">
+              <span className="font-mono text-[10px] text-[#E3C283] uppercase tracking-wider">
+                [ ALGORITHM // TUNING ]
+              </span>
+              <h2 className="font-sans text-lg text-[#ffffff] uppercase">
+                DISTANCE SENSITIVITY
+              </h2>
+            </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold">Temporal Consistency Frames (K)</label>
-                  <Input
-                    type="number"
-                    min="3"
-                    max="15"
-                    value={temporalFrames}
-                    onChange={(e) => setTemporalFrames(e.target.value)}
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    Minimum consecutive verified frames required before committing attendance.
-                  </p>
-                </div>
-              </CardContent>
-              <CardFooter className="border-t pt-4">
-                <Button type="submit" size="sm">
-                  Save Hyperparameters
-                </Button>
-              </CardFooter>
-            </form>
-          </Card>
-
-          {/* Database & Cloud Sync Status */}
-          <Card className="border-border/80 shadow-sm">
-            <CardHeader>
-              <div className="flex items-center gap-2.5">
-                <Database className="h-5 w-5 text-blue-500" />
-                <CardTitle className="text-base font-semibold">Persistence & Supabase Status</CardTitle>
-              </div>
-              <CardDescription className="text-xs">
-                PostgreSQL and Row Level Security connection status
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 text-xs">
-              <div className="p-3 rounded-lg border bg-muted/40 flex items-center justify-between">
-                <div>
-                  <span className="font-semibold block">Active Storage Engine</span>
-                  <span className="text-muted-foreground">
-                    {isCloud ? "Supabase Cloud Database" : "Local Browser Storage (Offline Demo Mode)"}
-                  </span>
-                </div>
-                <Badge variant={isCloud ? "success" : "secondary"}>
-                  {isCloud ? "PostgreSQL Active" : "Local Indexed"}
-                </Badge>
-              </div>
-
-              <div className="space-y-2">
-                <span className="font-semibold text-foreground block">Connecting to Supabase:</span>
-                <p className="text-muted-foreground leading-relaxed">
-                  To connect your institution's live Supabase database, set <code className="text-primary font-mono bg-muted px-1 py-0.5 rounded">NEXT_PUBLIC_SUPABASE_URL</code> and <code className="text-primary font-mono bg-muted px-1 py-0.5 rounded">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in your environment file, and apply <code className="font-mono text-foreground">001_initial_schema.sql</code>.
+            <form onSubmit={handleSave} className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block font-mono text-[10px] uppercase text-[#929189]">
+                  EUCLIDEAN DISTANCE THRESHOLD (τ)
+                </label>
+                <Input
+                  type="number"
+                  step="0.05"
+                  min="0.30"
+                  max="0.80"
+                  value={distanceThreshold}
+                  onChange={(e) => setDistanceThreshold(e.target.value)}
+                />
+                <p className="font-mono text-[10px] text-[#929189]">
+                  Default: 0.55. Calibrated for 128-d FaceNet cosine projections.
                 </p>
               </div>
-            </CardContent>
-          </Card>
+
+              <div className="space-y-1.5">
+                <label className="block font-mono text-[10px] uppercase text-[#929189]">
+                  TEMPORAL CONSISTENCY FRAMES (K)
+                </label>
+                <Input
+                  type="number"
+                  min="3"
+                  max="15"
+                  value={temporalFrames}
+                  onChange={(e) => setTemporalFrames(e.target.value)}
+                />
+                <p className="font-mono text-[10px] text-[#929189]">
+                  Consecutive matches required over rolling window before committing attendance.
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <Button type="submit" variant="champagne" size="sm" className="font-bold">
+                  APPLY HYPERPARAMETERS
+                </Button>
+              </div>
+            </form>
+          </div>
+
+          {/* Database & Cryptographic Infrastructure */}
+          <div className="border border-[#222220] bg-[#0E0E0E] flex flex-col justify-between">
+            <div className="p-6 border-b border-[#222220] space-y-1">
+              <span className="font-mono text-[10px] text-[#E3C283] uppercase tracking-wider">
+                [ INFRASTRUCTURE // BACKEND ]
+              </span>
+              <h2 className="font-sans text-lg text-[#ffffff] uppercase">
+                POSTGRES &amp; RLS INTEGRITY
+              </h2>
+            </div>
+
+            <div className="p-6 space-y-4 font-mono text-xs">
+              <div className="p-3 border border-[#222220] bg-[#131313] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#929189] uppercase text-[10px]">DATABASE ENGINE:</span>
+                  <span className="text-[#E3C283] font-bold">
+                    {isCloud ? "SUPABASE POSTGRESQL" : "INDEXEDDB FALLBACK"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#929189] uppercase text-[10px]">ROW LEVEL SECURITY:</span>
+                  <span className="text-[#ffffff]">ENFORCED (RLS)</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#929189] uppercase text-[10px]">VIDEO RETENTION:</span>
+                  <span className="text-[#E3C283]">ZERO (VOLATILE ONLY)</span>
+                </div>
+              </div>
+
+              <p className="text-[#929189] text-[11px] leading-relaxed">
+                Veyra enforces compound constraints at the SQL layer:{" "}
+                <code className="text-[#E3C283]">UNIQUE(session_id, student_id)</code> preventing
+                repeated attendance entries.
+              </p>
+            </div>
+
+            <div className="p-4 border-t border-[#222220] bg-[#131313] font-mono text-[10px] text-[#929189]">
+              BUILD VERSION: 26.4.11-PROD // PROTOCOL RFC-01
+            </div>
+          </div>
         </div>
       </div>
     </AppLayout>

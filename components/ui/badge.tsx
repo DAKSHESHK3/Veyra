@@ -2,23 +2,38 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: "default" | "secondary" | "destructive" | "outline" | "success" | "warning";
+  variant?:
+    | "default"
+    | "secondary"
+    | "destructive"
+    | "outline"
+    | "success"
+    | "warning"
+    | "champagne";
 }
 
 function Badge({ className, variant = "default", ...props }: BadgeProps) {
   const variants = {
-    default: "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
-    secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-    destructive: "border-transparent bg-destructive/15 text-destructive border-destructive/20",
-    outline: "text-foreground border-border",
-    success: "border-emerald-500/20 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-    warning: "border-amber-500/20 bg-amber-500/15 text-amber-600 dark:text-amber-400",
+    default:
+      "border-[#E3C283]/40 bg-[#5C4612]/30 text-[#E3C283]",
+    champagne:
+      "border-[#E3C283]/60 bg-[#5C4612]/40 text-[#E3C283]",
+    secondary:
+      "border-[#474740]/40 bg-[#201F1F] text-[#C9C7BD]",
+    destructive:
+      "border-[#FFB4AB]/40 bg-[#93000A]/40 text-[#FFB4AB]",
+    outline:
+      "border-[#222220] bg-transparent text-[#9A9A94]",
+    success:
+      "border-[#E3C283]/60 bg-[#5C4612]/40 text-[#E3C283]",
+    warning:
+      "border-[#E3C283]/30 bg-[#201F1F] text-[#E3C283]",
   };
 
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        "inline-flex items-center rounded-none border px-2 py-0.5 font-mono text-[10px] tracking-[0.14em] uppercase select-none",
         variants[variant],
         className
       )}

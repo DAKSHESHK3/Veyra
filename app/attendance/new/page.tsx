@@ -3,9 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Camera, Sparkles, BookOpen, Clock } from "lucide-react";
+import { ArrowLeft, Camera, Play } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { dbService } from "@/services/db";
@@ -76,96 +75,111 @@ export default function NewAttendanceSessionPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-xl mx-auto space-y-6">
-        <Link href="/attendance" className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground">
+      <div className="max-w-xl mx-auto space-y-6 select-none">
+        <Link
+          href="/attendance"
+          className="inline-flex items-center font-mono text-[10px] text-[#929189] hover:text-[#E3C283] transition-colors uppercase"
+        >
           <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-          Back to Sessions List
+          [ RETURN TO ACTIVE SESSIONS ]
         </Link>
 
-        <Card className="border-border/80 shadow-md">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                <Camera className="h-5 w-5" />
-              </div>
-              <div>
-                <CardTitle className="text-xl">Launch Live Attendance Session</CardTitle>
-                <CardDescription className="text-xs">
-                  Configure lecture parameters and activate real-time facial recognition
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
+        <div className="border border-[#222220] bg-[#0E0E0E]">
+          <div className="p-6 border-b border-[#222220] space-y-1">
+            <span className="font-mono text-[10px] text-[#E3C283] tracking-[0.25em] uppercase">
+              [ PROTOCOL // SESSION INITIALIZATION ]
+            </span>
+            <h2 className="font-sans text-xl text-[#ffffff] uppercase tracking-tight">
+              LAUNCH ATTENDANCE ROOM
+            </h2>
+            <p className="font-mono text-xs text-[#929189]">
+              Configure lecture parameters to engage client-side biometric verification
+            </p>
+          </div>
 
-          <form onSubmit={handleStartSession}>
-            <CardContent className="space-y-4">
-              {error && (
-                <div className="p-3 text-xs bg-destructive/10 border border-destructive/20 text-destructive rounded-lg">
-                  {error}
+          <form onSubmit={handleStartSession} className="p-6 space-y-5">
+            {error && (
+              <div className="p-3 border border-[#FFB4AB]/40 bg-[#93000A]/30 text-[#FFB4AB] font-mono text-xs">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="block font-mono text-[10px] uppercase text-[#929189] tracking-wider">
+                SUBJECT / COURSE CODE
+              </label>
+              {loading ? (
+                <div className="h-10 bg-[#1C1B1B] border border-[#222220] animate-pulse" />
+              ) : subjects.length === 0 ? (
+                <div className="p-3 border border-[#222220] bg-[#131313] font-mono text-xs text-[#929189]">
+                  No courses registered. Please add a course in Subjects first.
                 </div>
+              ) : (
+                <select
+                  value={selectedSubjectId}
+                  onChange={(e) => handleSubjectChange(e.target.value)}
+                  className="w-full h-10 px-3 bg-[#0E0E0E] border border-[#222220] text-xs font-mono text-[#F3F0E8] focus:border-[#E3C283] focus:outline-none"
+                >
+                  {subjects.map((sub) => (
+                    <option key={sub.id} value={sub.id}>
+                      {sub.name} [{sub.code}] — {sub.class_name}
+                    </option>
+                  ))}
+                </select>
               )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="block font-mono text-[10px] uppercase text-[#929189] tracking-wider">
+                  CLASS BATCH
+                </label>
+                <Input
+                  value={className}
+                  onChange={(e) => setClassName(e.target.value)}
+                  placeholder="CS-5th"
+                  required
+                />
+              </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold">Subject / Lecture Course *</label>
-                {loading ? (
-                  <div className="h-10 bg-muted/50 rounded-lg animate-pulse" />
-                ) : subjects.length === 0 ? (
-                  <div className="p-3 text-xs border rounded-lg bg-muted/40">
-                    No subjects found.{" "}
-                    <Link href="/subjects" className="text-primary underline">
-                      Create a subject first
-                    </Link>
-                  </div>
-                ) : (
-                  <select
-                    value={selectedSubjectId}
-                    onChange={(e) => handleSubjectChange(e.target.value)}
-                    className="w-full h-10 rounded-lg border border-input bg-background/50 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    {subjects.map((sub) => (
-                      <option key={sub.id} value={sub.id}>
-                        {sub.name} ({sub.code})
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <label className="block font-mono text-[10px] uppercase text-[#929189] tracking-wider">
+                  SEMESTER / TIER
+                </label>
+                <Input
+                  value={semester}
+                  onChange={(e) => setSemester(e.target.value)}
+                  placeholder="5th Semester"
+                  required
+                />
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold">Class / Batch</label>
-                  <Input
-                    required
-                    value={className}
-                    onChange={(e) => setClassName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold">Semester</label>
-                  <Input
-                    required
-                    value={semester}
-                    onChange={(e) => setSemester(e.target.value)}
-                  />
-                </div>
+            <div className="p-3 bg-[#131313] border border-[#222220] font-mono text-[10px] text-[#929189] space-y-1">
+              <div className="flex items-center gap-1.5 text-[#E3C283]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#E3C283]" />
+                VERIFICATION ENGINE: LOCAL WEBGL 2.0
               </div>
-
-              <div className="p-4 rounded-xl bg-muted/40 border border-border/60 text-xs text-muted-foreground space-y-1">
-                <span className="font-semibold text-foreground block">Session Security & Duplicate Prevention</span>
-                <p>
-                  Once started, the camera room matches active video frames against enrolled student embeddings. Each student can only be verified once per session.
-                </p>
+              <div>
+                Raw camera telemetry is strictly computed in client memory. No video streams are
+                persisted.
               </div>
-            </CardContent>
+            </div>
 
-            <CardFooter className="flex justify-end pt-2">
-              <Button type="submit" isLoading={isSubmitting} disabled={loading || subjects.length === 0}>
-                <Camera className="h-4 w-4 mr-2" />
-                Start Camera Session
+            <div className="pt-2">
+              <Button
+                type="submit"
+                variant="champagne"
+                className="w-full h-11 font-bold"
+                isLoading={isSubmitting}
+                disabled={loading || subjects.length === 0}
+              >
+                <Play className="h-3.5 w-3.5 mr-2" />
+                INITIALIZE WEBCAM SESSION →
               </Button>
-            </CardFooter>
+            </div>
           </form>
-        </Card>
+        </div>
       </div>
     </AppLayout>
   );

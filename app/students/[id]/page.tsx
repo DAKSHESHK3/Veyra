@@ -3,19 +3,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  User,
-  ShieldCheck,
-  Calendar,
-  CheckCircle2,
-  Trash2,
-  Camera,
-} from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { dbService } from "@/services/db";
 import { Student } from "@/types";
@@ -46,7 +36,7 @@ export default function StudentDetailPage() {
 
   const handleDelete = async () => {
     if (!student) return;
-    if (confirm(`Permanently delete ${student.full_name}?`)) {
+    if (confirm(`Prune biometric profile and records for ${student.full_name}?`)) {
       try {
         await dbService.deleteStudent(student.id);
         router.push("/students");
@@ -60,8 +50,8 @@ export default function StudentDetailPage() {
     return (
       <AppLayout>
         <div className="space-y-6">
-          <Skeleton className="h-8 w-40" />
-          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-8 w-40 bg-[#1C1B1B]" />
+          <Skeleton className="h-64 w-full bg-[#1C1B1B]" />
         </div>
       </AppLayout>
     );
@@ -70,11 +60,11 @@ export default function StudentDetailPage() {
   if (!student) {
     return (
       <AppLayout>
-        <div className="text-center py-12 space-y-3">
-          <p className="text-base font-semibold">Student record not found</p>
+        <div className="text-center py-12 space-y-3 font-mono text-xs text-[#929189]">
+          <p>STUDENT PROFILE NOT FOUND IN REPOSITORY</p>
           <Link href="/students">
             <Button variant="outline" size="sm">
-              &larr; Back to Student Directory
+              &larr; RETURN TO DIRECTORY
             </Button>
           </Link>
         </div>
@@ -84,81 +74,92 @@ export default function StudentDetailPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 max-w-4xl">
-        <div className="flex items-center justify-between">
-          <Link href="/students" className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground">
+      <div className="space-y-6 max-w-4xl mx-auto select-none">
+        <div className="flex items-center justify-between border-b border-[#222220] pb-4">
+          <Link
+            href="/students"
+            className="inline-flex items-center font-mono text-[10px] text-[#929189] hover:text-[#E3C283] transition-colors uppercase"
+          >
             <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-            Back to Students
+            [ ROSTER DIRECTORY ]
           </Link>
           <Button
             variant="destructive"
             size="sm"
             onClick={handleDelete}
-            className="text-xs"
+            className="h-8 text-[10px]"
           >
-            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-            Delete Student
+            <Trash2 className="h-3 w-3 mr-1.5" />
+            PRUNE BIOMETRIC PROFILE
           </Button>
         </div>
 
         {/* Profile Card */}
-        <Card className="border-border/80 shadow-sm">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-primary to-blue-400 text-primary-foreground flex items-center justify-center font-bold text-xl shadow-md">
-                  {student.full_name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .slice(0, 2)
-                    .join("")}
-                </div>
-                <div>
-                  <CardTitle className="text-xl font-bold">{student.full_name}</CardTitle>
-                  <CardDescription className="text-xs mt-1">
-                    Roll Number: <span className="font-mono font-bold text-foreground">{student.roll_number}</span> • {student.class_name} ({student.semester})
-                  </CardDescription>
-                </div>
-              </div>
-              <Badge variant="success" className="gap-1 text-xs">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                Active Profile
-              </Badge>
+        <div className="border border-[#222220] bg-[#0E0E0E]">
+          <div className="p-6 border-b border-[#222220] flex items-center justify-between">
+            <div className="space-y-1">
+              <span className="font-mono text-[10px] text-[#E3C283] tracking-[0.25em] uppercase">
+                [ BIOMETRIC RECORD // {student.roll_number} ]
+              </span>
+              <h1 className="font-sans text-2xl text-[#ffffff] font-normal uppercase">
+                {student.full_name}
+              </h1>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-muted/40 border text-xs">
-              <div>
-                <span className="text-muted-foreground block text-[11px]">Email Address</span>
-                <span className="font-medium">{student.email || "—"}</span>
+            <span className="px-2.5 py-1 bg-[#5C4612]/30 border border-[#E3C283]/40 text-[#E3C283] font-mono text-[10px]">
+              VERIFIED
+            </span>
+          </div>
+
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 font-mono text-xs">
+              <div className="p-3 border border-[#222220] bg-[#131313]">
+                <span className="text-[10px] text-[#929189] block uppercase">ROLL NUMBER</span>
+                <span className="text-[#E3C283] font-bold text-sm">{student.roll_number}</span>
               </div>
-              <div>
-                <span className="text-muted-foreground block text-[11px]">Enrolled Date</span>
-                <span className="font-medium">{formatDate(student.created_at)}</span>
+              <div className="p-3 border border-[#222220] bg-[#131313]">
+                <span className="text-[10px] text-[#929189] block uppercase">SECTION</span>
+                <span className="text-[#ffffff] text-sm">{student.class_name}</span>
               </div>
-              <div>
-                <span className="text-muted-foreground block text-[11px]">Biometric Model</span>
-                <span className="font-medium text-emerald-600 dark:text-emerald-400">FaceNet 128-d Metric</span>
+              <div className="p-3 border border-[#222220] bg-[#131313]">
+                <span className="text-[10px] text-[#929189] block uppercase">SEMESTER</span>
+                <span className="text-[#C9C7BD] text-sm">{student.semester}</span>
+              </div>
+              <div className="p-3 border border-[#222220] bg-[#131313]">
+                <span className="text-[10px] text-[#929189] block uppercase">ENROLLED AT</span>
+                <span className="text-[#C9C7BD] text-xs">
+                  {student.created_at ? formatDate(student.created_at) : "—"}
+                </span>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="text-sm font-semibold">Biometric Enrollment Status</h4>
-              <div className="p-4 rounded-xl border border-border/80 bg-card space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-2 font-medium">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                    Facial Embedding Registered
-                  </span>
-                  <Badge variant="outline" className="text-[10px]">30 Samples Centroid</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Student feature vector is active in the in-memory matching pool. The browser can identify this student during live lecture sessions with temporal verification.
-                </p>
+            {/* Biometric Math Status */}
+            <div className="p-4 border border-[#222220] bg-[#090909] font-mono text-xs space-y-2">
+              <div className="flex items-center justify-between text-[#929189] border-b border-[#222220] pb-2">
+                <span className="text-[#ffffff] font-bold">128-D CENTROID VECTOR STATUS</span>
+                <span className="text-[#E3C283]">CALIBRATED (30 POSES)</span>
               </div>
+              <p className="text-[#929189] text-[10px] leading-relaxed">
+                Biometric feature embeddings are stored as 128 normalized float components. Raw webcam images are discarded in browser memory following centroid generation and are never transmitted to server infrastructure.
+              </p>
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Quick Actions: Edit Profile & Biometric Re-Enroll */}
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Link
+                href={`/students/${student.id}/edit`}
+                className="border border-[#474740] bg-[#131313] hover:border-[#E3C283] text-[#F3F0E8] px-4 py-2 text-xs font-mono uppercase tracking-wider transition-colors"
+              >
+                EDIT STUDENT RECORD
+              </Link>
+              <Link
+                href={`/students/${student.id}/enroll`}
+                className="border border-[#E3C283]/40 bg-[#5C4612]/20 hover:border-[#E3C283] text-[#E3C283] px-4 py-2 text-xs font-mono uppercase tracking-wider transition-colors"
+              >
+                RE-CALIBRATE BIOMETRICS
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </AppLayout>
   );

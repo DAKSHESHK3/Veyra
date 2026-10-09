@@ -254,6 +254,37 @@ export const dbService = {
     return newStudent;
   },
 
+  async updateStudent(
+    id: string,
+    studentData: Partial<Omit<Student, "id" | "created_at" | "updated_at">>
+  ): Promise<Student | null> {
+    if (isSupabaseConfigured() && supabase) {
+      const { data, error } = await supabase
+        .from("students")
+        .update({
+          ...studentData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+    const current = getLocal<Student[]>(LOCAL_STORAGE_KEYS.STUDENTS, INITIAL_STUDENTS);
+    const index = current.findIndex((s) => s.id === id);
+    if (index >= 0) {
+      current[index] = {
+        ...current[index],
+        ...studentData,
+        updated_at: new Date().toISOString(),
+      };
+      setLocal(LOCAL_STORAGE_KEYS.STUDENTS, current);
+      return current[index];
+    }
+    return null;
+  },
+
   async deleteStudent(id: string): Promise<void> {
     if (isSupabaseConfigured() && supabase) {
       const { error } = await supabase.from("students").delete().eq("id", id);
@@ -263,6 +294,55 @@ export const dbService = {
     const current = getLocal<Student[]>(LOCAL_STORAGE_KEYS.STUDENTS, INITIAL_STUDENTS);
     setLocal(
       LOCAL_STORAGE_KEYS.STUDENTS,
+      current.filter((s) => s.id !== id)
+    );
+  },
+
+  async getSubjectById(id: string): Promise<Subject | null> {
+    const subjects = await this.getSubjects();
+    return subjects.find((s) => s.id === id) || null;
+  },
+
+  async updateSubject(
+    id: string,
+    subjectData: Partial<Omit<Subject, "id" | "created_at" | "updated_at">>
+  ): Promise<Subject | null> {
+    if (isSupabaseConfigured() && supabase) {
+      const { data, error } = await supabase
+        .from("subjects")
+        .update({
+          ...subjectData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+    const current = getLocal<Subject[]>(LOCAL_STORAGE_KEYS.SUBJECTS, INITIAL_SUBJECTS);
+    const index = current.findIndex((s) => s.id === id);
+    if (index >= 0) {
+      current[index] = {
+        ...current[index],
+        ...subjectData,
+        updated_at: new Date().toISOString(),
+      };
+      setLocal(LOCAL_STORAGE_KEYS.SUBJECTS, current);
+      return current[index];
+    }
+    return null;
+  },
+
+  async deleteSubject(id: string): Promise<void> {
+    if (isSupabaseConfigured() && supabase) {
+      const { error } = await supabase.from("subjects").delete().eq("id", id);
+      if (error) throw new Error(error.message);
+      return;
+    }
+    const current = getLocal<Subject[]>(LOCAL_STORAGE_KEYS.SUBJECTS, INITIAL_SUBJECTS);
+    setLocal(
+      LOCAL_STORAGE_KEYS.SUBJECTS,
       current.filter((s) => s.id !== id)
     );
   },
@@ -443,6 +523,26 @@ export const dbService = {
         ...r,
         student: students.find((s) => s.id === r.student_id),
       }));
+  },
+
+  async getAllAttendanceRecords(): Promise<AttendanceRecord[]> {
+    if (isSupabaseConfigured() && supabase) {
+      const { data, error } = await supabase
+        .from("attendance_records")
+        .select("*, student:students(*)")
+        .order("marked_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+
+    const records = getLocal<AttendanceRecord[]>(LOCAL_STORAGE_KEYS.RECORDS, []);
+    const students = await this.getStudents();
+    return records
+      .map((r) => ({
+        ...r,
+        student: students.find((s) => s.id === r.student_id),
+      }))
+      .sort((a, b) => new Date(b.marked_at).getTime() - new Date(a.marked_at).getTime());
   },
 
   async recordAttendance(

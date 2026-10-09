@@ -59,6 +59,7 @@ export interface AttendanceSession {
   status: SessionStatus;
   class_name: string;
   semester: string;
+  room?: string;
   created_at: string;
   // Joined fields
   subject?: Subject;

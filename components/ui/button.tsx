@@ -8,6 +8,7 @@ export interface ButtonProps
     | "destructive"
     | "outline"
     | "secondary"
+    | "champagne"
     | "ghost"
     | "link"
     | "glass";
@@ -29,27 +30,30 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]";
+      "inline-flex items-center justify-center whitespace-nowrap rounded-none text-xs font-mono uppercase tracking-[0.14em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#E3C283] disabled:pointer-events-none disabled:opacity-40 select-none";
 
     const variants = {
       default:
-        "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md",
-      destructive:
-        "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-      outline:
-        "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+        "bg-[#ffffff] text-[#090909] font-medium hover:bg-[#E4E3DC] active:translate-y-[1px]",
+      champagne:
+        "bg-[#E3C283] text-[#402D00] font-bold hover:bg-[#FFDEA1] active:translate-y-[1px]",
       secondary:
-        "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-      ghost: "hover:bg-accent hover:text-accent-foreground",
-      link: "text-primary underline-offset-4 hover:underline",
+        "bg-[#201F1F] text-[#F3F0E8] border border-[#474740]/40 hover:border-[#E3C283] hover:text-[#E3C283]",
+      destructive:
+        "bg-[#93000A] text-[#FFDAD6] border border-[#FFB4AB]/40 hover:bg-[#BA1A1A]",
+      outline:
+        "border border-[#474740] bg-transparent text-[#F3F0E8] hover:border-[#E3C283] hover:text-[#E3C283] hover:bg-[#1C1B1B]",
+      ghost:
+        "bg-transparent text-[#C9C7BD] hover:text-[#F3F0E8] hover:bg-[#201F1F]",
+      link: "text-[#E3C283] underline-offset-4 hover:underline normal-case",
       glass:
-        "glass-panel text-foreground shadow-sm hover:bg-white/40 dark:hover:bg-slate-800/50",
+        "bg-[#0E0E0E]/80 backdrop-blur-md border border-[#222220] text-[#F3F0E8] hover:border-[#E3C283]/50",
     };
 
     const sizes = {
       default: "h-10 px-4 py-2",
-      sm: "h-8 rounded-md px-3 text-xs",
-      lg: "h-11 rounded-lg px-8 text-base",
+      sm: "h-8 px-3 text-[11px]",
+      lg: "h-12 px-6 text-xs",
       icon: "h-10 w-10 p-0",
     };
 
@@ -62,7 +66,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {isLoading && (
           <svg
-            className="mr-2 h-4 w-4 animate-spin text-current"
+            className="mr-2 h-3.5 w-3.5 animate-spin text-current"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"

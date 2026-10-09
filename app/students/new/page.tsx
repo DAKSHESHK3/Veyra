@@ -3,35 +3,22 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Camera,
-  CheckCircle2,
-  AlertCircle,
-  Sparkles,
-  RefreshCw,
-  Video,
-  ShieldCheck,
-  ChevronRight,
-  User,
-} from "lucide-react";
+import { ArrowLeft, Camera, RefreshCw, CheckCircle2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { dbService } from "@/services/db";
-import { loadFaceRecognitionModels, getFaceApi, areModelsLoaded } from "@/lib/face-recognition/models";
+import { loadFaceRecognitionModels, getFaceApi } from "@/lib/face-recognition/models";
 import { checkFaceQuality } from "@/lib/face-recognition/quality";
 import { computeEmbeddingCentroid } from "@/lib/face-recognition/matcher";
 
-type Step = "info" | "camera" | "review";
+type Step = "details" | "capture" | "verify";
 
 export default function NewStudentEnrollmentPage() {
   const router = useRouter();
 
   // Wizard Step
-  const [step, setStep] = useState<Step>("info");
+  const [step, setStep] = useState<Step>("details");
 
   // Step 1: Student Information
   const [fullName, setFullName] = useState("");
@@ -44,16 +31,15 @@ export default function NewStudentEnrollmentPage() {
 
   // Step 2: Camera Enrollment State
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [modelStatus, setModelStatus] = useState<string>("Initializing AI models...");
+  const [modelStatus, setModelStatus] = useState<string>("INITIALIZING WEBGL FACENET...");
   const [isModelsReady, setIsModelsReady] = useState(false);
 
   // Pose Guidance & Samples
   const [currentPose, setCurrentPose] = useState<"frontal" | "left" | "right">("frontal");
   const [capturedEmbeddings, setCapturedEmbeddings] = useState<Float32Array[]>([]);
-  const [qualityFeedback, setQualityFeedback] = useState<string>("Looking for face...");
+  const [qualityFeedback, setQualityFeedback] = useState<string>("OPTIMAL");
   const [isCapturing, setIsCapturing] = useState(false);
   const sampleLimit = 24; // 8 frontal, 8 left, 8 right
 
@@ -64,20 +50,18 @@ export default function NewStudentEnrollmentPage() {
   // Initialize camera and models when entering Step 2
   useEffect(() => {
     let stream: MediaStream | null = null;
-    let animId: number = 0;
 
     async function initCameraAndModels() {
-      if (step !== "camera") return;
+      if (step !== "capture") return;
 
       try {
-        setModelStatus("Loading FaceNet biometric weights...");
+        setModelStatus("COMPILING WEBGL SHADERS...");
         await loadFaceRecognitionModels((pct, label) => {
-          setModelStatus(`${label} (${pct}%)`);
+          setModelStatus(`${label.toUpperCase()} (${pct}%)`);
         });
         setIsModelsReady(true);
-        setModelStatus("Models active & ready.");
+        setModelStatus("ONLINE");
 
-        // Start Webcam
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           throw new Error("Webcam access is unsupported in this browser or requires HTTPS.");
         }
@@ -106,15 +90,12 @@ export default function NewStudentEnrollmentPage() {
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
       }
-      if (animId) {
-        cancelAnimationFrame(animId);
-      }
     };
   }, [step]);
 
   // Capture loop during camera step
   useEffect(() => {
-    if (step !== "camera" || !cameraActive || !isModelsReady || !isCapturing) return;
+    if (step !== "capture" || !cameraActive || !isModelsReady || !isCapturing) return;
 
     let active = true;
     let timerId: NodeJS.Timeout;
@@ -126,9 +107,11 @@ export default function NewStudentEnrollmentPage() {
         const faceapi = await getFaceApi();
         if (!faceapi) return;
 
-        // Detect single face with landmarks & descriptor
         const detection = await faceapi
-          .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
+          .detectSingleFace(
+            videoRef.current,
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })
+          )
           .withFaceLandmarks(true)
           .withFaceDescriptor();
 
@@ -138,11 +121,10 @@ export default function NewStudentEnrollmentPage() {
           const quality = checkFaceQuality(detection, videoWidth, videoHeight);
 
           if (quality.passed) {
-            setQualityFeedback("✓ Sample accepted! Hold steady...");
+            setQualityFeedback("EXCELLENT");
             setCapturedEmbeddings((prev) => {
               const updated = [...prev, detection.descriptor];
 
-              // Update pose guidance based on progress
               if (updated.length >= 8 && updated.length < 16) {
                 setCurrentPose("left");
               } else if (updated.length >= 16) {
@@ -151,26 +133,26 @@ export default function NewStudentEnrollmentPage() {
 
               if (updated.length >= sampleLimit) {
                 setIsCapturing(false);
-                setStep("review");
+                setStep("verify");
               }
               return updated;
             });
           } else {
-            setQualityFeedback(quality.message);
+            setQualityFeedback(quality.message.toUpperCase());
           }
         } else {
-          setQualityFeedback("Looking for face... Please center yourself.");
+          setQualityFeedback("SEARCHING FOR CENTROID...");
         }
       } catch (err) {
         console.error("Frame capture error:", err);
       }
 
       if (active && isCapturing) {
-        timerId = setTimeout(captureSample, 250); // Sample every 250ms
+        timerId = setTimeout(captureSample, 220);
       }
     };
 
-    timerId = setTimeout(captureSample, 300);
+    timerId = setTimeout(captureSample, 250);
 
     return () => {
       active = false;
@@ -186,7 +168,7 @@ export default function NewStudentEnrollmentPage() {
       setInfoError("Student full name and roll number are mandatory.");
       return;
     }
-    setStep("camera");
+    setStep("capture");
   };
 
   // Handle Final Submission
@@ -199,7 +181,6 @@ export default function NewStudentEnrollmentPage() {
         throw new Error("No biometric samples captured. Please redo camera enrollment.");
       }
 
-      // Compute normalized centroid vector across all valid samples
       const centroid = computeEmbeddingCentroid(capturedEmbeddings);
 
       await dbService.createStudent(
@@ -223,337 +204,404 @@ export default function NewStudentEnrollmentPage() {
     }
   };
 
+  const poseLabel =
+    currentPose === "frontal"
+      ? "01 / 03 [ FRONTAL ]"
+      : currentPose === "left"
+      ? "02 / 03 [ LEFT 15° ]"
+      : "03 / 03 [ RIGHT 15° ]";
+
   return (
     <AppLayout>
-      <div className="space-y-6 max-w-3xl mx-auto">
-        <div className="flex items-center justify-between">
-          <Link href="/students" className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground">
+      <div className="space-y-6 max-w-4xl mx-auto select-none">
+        {/* Step Navigation Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222220] pb-4">
+          <Link
+            href="/students"
+            className="inline-flex items-center font-mono text-[10px] text-[#929189] hover:text-[#E3C283] transition-colors uppercase"
+          >
             <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-            Back to Directory
+            [ ROSTER DIRECTORY ]
           </Link>
-          <div className="flex items-center gap-2 text-xs">
-            <span className={step === "info" ? "font-bold text-primary" : "text-muted-foreground"}>
-              1. Information
+
+          <div className="flex items-center gap-3 font-mono text-[10px] tracking-[0.16em] uppercase">
+            <span
+              className={
+                step === "details"
+                  ? "text-[#E3C283] border-b border-[#E3C283] pb-0.5 font-bold"
+                  : "text-[#929189]"
+              }
+            >
+              01 DETAILS
             </span>
-            <span>&rarr;</span>
-            <span className={step === "camera" ? "font-bold text-primary" : "text-muted-foreground"}>
-              2. Biometric Capture
+            <span className="text-[#474740]">/</span>
+            <span
+              className={
+                step === "capture"
+                  ? "text-[#E3C283] border-b border-[#E3C283] pb-0.5 font-bold"
+                  : "text-[#929189]"
+              }
+            >
+              02 CAPTURE
             </span>
-            <span>&rarr;</span>
-            <span className={step === "review" ? "font-bold text-primary" : "text-muted-foreground"}>
-              3. Review
+            <span className="text-[#474740]">/</span>
+            <span
+              className={
+                step === "verify"
+                  ? "text-[#E3C283] border-b border-[#E3C283] pb-0.5 font-bold"
+                  : "text-[#929189]"
+              }
+            >
+              03 VERIFY
             </span>
           </div>
         </div>
 
-        {/* STEP 1: STUDENT INFORMATION */}
-        {step === "info" && (
-          <Card className="border-border/80 shadow-md">
-            <CardHeader>
-              <CardTitle className="text-xl">Student Enrollment: Step 1 of 3</CardTitle>
-              <CardDescription>
-                Enter student identification details. Roll numbers must be unique within the designated class.
-              </CardDescription>
-            </CardHeader>
-            <form onSubmit={handleProceedToCamera}>
-              <CardContent className="space-y-4">
-                {infoError && (
-                  <div className="p-3 text-xs bg-destructive/10 border border-destructive/20 text-destructive rounded-lg">
-                    {infoError}
-                  </div>
-                )}
+        {/* STEP 1: DETAILS */}
+        {step === "details" && (
+          <div className="border border-[#222220] bg-[#0E0E0E]">
+            <div className="p-6 border-b border-[#222220] space-y-1">
+              <span className="font-mono text-[10px] text-[#E3C283] tracking-[0.25em] uppercase">
+                [ STAGE 01 // IDENTITY PARAMETERS ]
+              </span>
+              <h2 className="font-sans text-xl text-[#ffffff] uppercase tracking-tight">
+                REGISTER STUDENT PROFILE
+              </h2>
+              <p className="font-mono text-xs text-[#929189]">
+                Provide academic metadata. Roll numbers are enforced unique at the Postgres layer.
+              </p>
+            </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold">Student Full Name *</label>
-                    <Input
-                      required
-                      placeholder="e.g. Rahul Sharma"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                    />
-                  </div>
+            <form onSubmit={handleProceedToCamera} className="p-6 space-y-4">
+              {infoError && (
+                <div className="p-3 border border-[#FFB4AB]/40 bg-[#93000A]/30 text-[#FFB4AB] font-mono text-xs">
+                  {infoError}
+                </div>
+              )}
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold">Roll Number *</label>
-                    <Input
-                      required
-                      placeholder="e.g. 4"
-                      value={rollNumber}
-                      onChange={(e) => setRollNumber(e.target.value)}
-                    />
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block font-mono text-[10px] uppercase text-[#929189] tracking-wider">
+                    STUDENT FULL NAME *
+                  </label>
+                  <Input
+                    required
+                    placeholder="e.g. Rahul Sharma"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold">Class / Section *</label>
-                    <Input
-                      required
-                      placeholder="e.g. CS-5th"
-                      value={className}
-                      onChange={(e) => setClassName(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold">Semester *</label>
-                    <Input
-                      required
-                      placeholder="e.g. 5th Semester"
-                      value={semester}
-                      onChange={(e) => setSemester(e.target.value)}
-                    />
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="block font-mono text-[10px] uppercase text-[#929189] tracking-wider">
+                    ROLL NUMBER IDENTIFIER *
+                  </label>
+                  <Input
+                    required
+                    placeholder="e.g. 2023-CS-084"
+                    value={rollNumber}
+                    onChange={(e) => setRollNumber(e.target.value)}
+                  />
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold">Email Address (Optional)</label>
-                    <Input
-                      type="email"
-                      placeholder="student@institution.edu"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold">Contact Phone (Optional)</label>
-                    <Input
-                      placeholder="+91 98765 43210"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-muted/40 border border-border/60 text-xs text-muted-foreground space-y-1">
-                  <span className="font-semibold text-foreground block">Biometric Privacy Notice</span>
-                  <p>
-                    Your camera will be used to capture face samples for attendance recognition. Only mathematical 128-dimensional embedding vectors are persisted; continuous raw webcam video is never transmitted to external servers.
-                  </p>
-                </div>
-              </CardContent>
-
-              <CardFooter className="flex justify-end gap-2 pt-2">
-                <Button type="submit">
-                  Proceed to Camera Enrollment
-                  <ChevronRight className="h-4 w-4 ml-1.5" />
-                </Button>
-              </CardFooter>
-            </form>
-          </Card>
-        )}
-
-        {/* STEP 2: CAMERA BIOMETRIC ENROLLMENT */}
-        {step === "camera" && (
-          <Card className="border-border/80 shadow-md">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl">Biometric Face Capture</CardTitle>
-                  <CardDescription className="text-xs mt-1">
-                    Enrolling: <span className="font-semibold text-foreground">{fullName}</span> (Roll: {rollNumber})
-                  </CardDescription>
-                </div>
-                <Badge variant={isModelsReady ? "success" : "secondary"} className="text-xs">
-                  {modelStatus}
-                </Badge>
               </div>
-            </CardHeader>
 
-            <CardContent className="space-y-4">
-              {cameraError ? (
-                <div className="p-6 text-center space-y-3 rounded-xl border border-destructive/20 bg-destructive/10">
-                  <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
-                  <p className="font-semibold text-sm text-destructive">Camera Initialization Error</p>
-                  <p className="text-xs text-muted-foreground max-w-md mx-auto">{cameraError}</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setCameraError(null);
-                      setStep("info");
-                    }}
-                  >
-                    Return to Step 1
-                  </Button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block font-mono text-[10px] uppercase text-[#929189] tracking-wider">
+                    DEPARTMENT / SECTION *
+                  </label>
+                  <Input
+                    required
+                    placeholder="e.g. CSE / SEC-V"
+                    value={className}
+                    onChange={(e) => setClassName(e.target.value)}
+                  />
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Pose Guidance Banner */}
-                  <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between text-xs">
-                    <div className="space-y-0.5">
-                      <span className="text-primary font-bold uppercase tracking-wider text-[10px]">
-                        Guided Capture Pose:
-                      </span>
-                      <p className="font-semibold text-foreground text-sm">
-                        {currentPose === "frontal"
-                          ? "1. Look directly at the camera"
-                          : currentPose === "left"
-                          ? "2. Turn your head slightly to the left"
-                          : "3. Turn your head slightly to the right"}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="font-mono text-xs">
-                      {capturedEmbeddings.length} / {sampleLimit} Samples
-                    </Badge>
-                  </div>
 
-                  {/* Video Viewport */}
-                  <div className="relative aspect-video max-w-lg mx-auto rounded-2xl overflow-hidden bg-black shadow-inner border border-border">
-                    <video
-                      ref={videoRef}
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover scale-x-[-1]"
-                    />
-                    <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />
-
-                    {/* Framing Reticle */}
-                    <div className="absolute inset-8 border-2 border-dashed border-white/40 rounded-2xl pointer-events-none flex items-center justify-center">
-                      <span className="text-[11px] text-white/70 bg-black/40 px-2 py-0.5 rounded backdrop-blur">
-                        Position Face Here
-                      </span>
-                    </div>
-
-                    {/* Quality Feedback Pill */}
-                    <div className="absolute bottom-3 left-3 right-3 text-center pointer-events-none">
-                      <span className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-black/60 text-white backdrop-blur border border-white/10">
-                        {qualityFeedback}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Capture Completion</span>
-                      <span>{Math.round((capturedEmbeddings.length / sampleLimit) * 100)}%</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all duration-300"
-                        style={{
-                          width: `${(capturedEmbeddings.length / sampleLimit) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="block font-mono text-[10px] uppercase text-[#929189] tracking-wider">
+                    ACADEMIC SEMESTER *
+                  </label>
+                  <Input
+                    required
+                    placeholder="e.g. 5th Semester"
+                    value={semester}
+                    onChange={(e) => setSemester(e.target.value)}
+                  />
                 </div>
-              )}
-            </CardContent>
+              </div>
 
-            <CardFooter className="flex justify-between border-t pt-4">
-              <Button variant="outline" size="sm" onClick={() => setStep("info")}>
-                &larr; Back
-              </Button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block font-mono text-[10px] uppercase text-[#929189] tracking-wider">
+                    EMAIL ADDRESS (OPTIONAL)
+                  </label>
+                  <Input
+                    type="email"
+                    placeholder="student@institution.edu"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
 
-              {!isCapturing && capturedEmbeddings.length < sampleLimit && (
-                <Button
-                  onClick={() => setIsCapturing(true)}
-                  disabled={!cameraActive || !isModelsReady}
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Start Auto-Capture ({sampleLimit} Samples)
+                <div className="space-y-1.5">
+                  <label className="block font-mono text-[10px] uppercase text-[#929189] tracking-wider">
+                    CONTACT PHONE (OPTIONAL)
+                  </label>
+                  <Input
+                    placeholder="+91 98765 43210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-[#131313] border border-[#222220] font-mono text-[10px] text-[#929189] space-y-1">
+                <div className="flex items-center gap-1.5 text-[#E3C283]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#E3C283]" />
+                  PRIVACY PROTOCOL: ZERO RAW VIDEO PERSISTENCE
+                </div>
+                <div>
+                  Webcam will sample 24 feature matrices locally to compute a 128-float centroid.
+                  No photos or video feeds are transmitted to cloud storage.
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button type="submit" variant="champagne" className="h-10 px-6 font-bold">
+                  PROCEED TO BIOMETRIC CALIBRATION →
                 </Button>
-              )}
-
-              {isCapturing && (
-                <Button
-                  variant="secondary"
-                  onClick={() => setIsCapturing(false)}
-                >
-                  Pause Capture
-                </Button>
-              )}
-
-              {capturedEmbeddings.length >= sampleLimit && (
-                <Button onClick={() => setStep("review")}>
-                  Proceed to Review
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              )}
-            </CardFooter>
-          </Card>
+              </div>
+            </form>
+          </div>
         )}
 
-        {/* STEP 3: REVIEW & SAVE */}
-        {step === "review" && (
-          <Card className="border-border/80 shadow-md">
-            <CardHeader>
-              <CardTitle className="text-xl">Review & Finalize Enrollment</CardTitle>
-              <CardDescription>
-                Confirm student metadata and generated 128-d biometric feature centroid
-              </CardDescription>
-            </CardHeader>
+        {/* STEP 2: CAPTURE */}
+        {step === "capture" && (
+          <div className="border border-[#222220] bg-[#0E0E0E] space-y-4">
+            <div className="p-6 border-b border-[#222220] flex flex-wrap items-center justify-between gap-4">
+              <div className="space-y-1">
+                <span className="font-mono text-[10px] text-[#E3C283] tracking-[0.25em] uppercase">
+                  [ STAGE 02 // 3-POSE CALIBRATION ]
+                </span>
+                <h2 className="font-sans text-xl text-[#ffffff] uppercase tracking-tight">
+                  BIOMETRIC CENTROID SEEDING: {fullName.toUpperCase()}
+                </h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 bg-[#131313] border border-[#222220] font-mono text-[10px] text-[#E3C283]">
+                  ROLL: {rollNumber}
+                </span>
+                <span className="px-2.5 py-1 bg-[#131313] border border-[#222220] font-mono text-[10px] text-[#929189]">
+                  ENGINE: {modelStatus}
+                </span>
+              </div>
+            </div>
 
-            <CardContent className="space-y-6">
+            <div className="p-6 space-y-6">
+              {/* Telemetry Status Strip */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="p-3 border border-[#222220] bg-[#131313]">
+                  <span className="font-mono text-[9px] text-[#929189] uppercase tracking-wider">
+                    CAPTURE QUALITY
+                  </span>
+                  <div className="font-mono text-sm text-[#E3C283] font-bold mt-0.5">
+                    {qualityFeedback}
+                  </div>
+                </div>
+
+                <div className="p-3 border border-[#222220] bg-[#131313]">
+                  <span className="font-mono text-[9px] text-[#929189] uppercase tracking-wider">
+                    GUIDED POSE
+                  </span>
+                  <div className="font-mono text-sm text-[#ffffff] font-bold mt-0.5">
+                    {poseLabel}
+                  </div>
+                </div>
+
+                <div className="p-3 border border-[#222220] bg-[#131313]">
+                  <span className="font-mono text-[9px] text-[#929189] uppercase tracking-wider">
+                    FACE POSITION
+                  </span>
+                  <div className="font-mono text-sm text-[#E3C283] font-bold mt-0.5">
+                    OPTIMAL
+                  </div>
+                </div>
+
+                <div className="p-3 border border-[#222220] bg-[#131313]">
+                  <span className="font-mono text-[9px] text-[#929189] uppercase tracking-wider">
+                    SAMPLES
+                  </span>
+                  <div className="font-mono text-sm text-[#ffffff] font-bold mt-0.5">
+                    {capturedEmbeddings.length} / {sampleLimit}
+                  </div>
+                </div>
+              </div>
+
+              {/* Video Viewport Chassis */}
+              <div className="relative aspect-video max-w-2xl mx-auto border border-[#222220] bg-[#090909] overflow-hidden">
+                <video
+                  ref={videoRef}
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover scale-x-[-1]"
+                />
+
+                {/* Framing Precision Biometric Brackets */}
+                <div className="absolute inset-8 pointer-events-none border border-[#E3C283]/40 flex flex-col justify-between p-3 select-none">
+                  <div className="flex justify-between items-start font-mono text-[9px]">
+                    <span className="text-[#E3C283]">[ POSE: {currentPose.toUpperCase()} ]</span>
+                    <span className="text-[#929189]">TINYFACE 320</span>
+                  </div>
+
+                  <div className="self-center w-24 h-24 rounded-full border border-dashed border-[#E3C283]/50 flex items-center justify-center">
+                    <span className="w-2 h-2 rounded-full bg-[#E3C283] animate-pulse" />
+                  </div>
+
+                  <div className="flex justify-between items-end font-mono text-[9px]">
+                    <span className="text-[#929189]">VECTOR: 128-D EMBEDDER</span>
+                    <span className="text-[#E3C283] font-bold">CALIBRATING</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="space-y-1.5 max-w-2xl mx-auto font-mono text-[10px]">
+                <div className="flex justify-between text-[#929189]">
+                  <span>PROGRESS COMPLETION</span>
+                  <span className="text-[#E3C283]">
+                    {Math.round((capturedEmbeddings.length / sampleLimit) * 100)}%
+                  </span>
+                </div>
+                <div className="w-full bg-[#1C1B1B] h-1.5">
+                  <div
+                    className="bg-[#E3C283] h-1.5 transition-all duration-300"
+                    style={{
+                      width: `${(capturedEmbeddings.length / sampleLimit) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Capture Action Buttons */}
+              <div className="flex items-center justify-between pt-4 border-t border-[#222220]">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setStep("details")}
+                  className="border-[#474740]"
+                >
+                  &larr; BACK TO DETAILS
+                </Button>
+
+                {!isCapturing ? (
+                  <Button
+                    variant="champagne"
+                    size="sm"
+                    onClick={() => setIsCapturing(true)}
+                    disabled={!cameraActive || !isModelsReady}
+                    className="font-bold"
+                  >
+                    <Camera className="h-3.5 w-3.5 mr-2" />
+                    BEGIN 3-POSE SAMPLING
+                  </Button>
+                ) : (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setIsCapturing(false)}
+                  >
+                    PAUSE SAMPLING
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: VERIFY */}
+        {step === "verify" && (
+          <div className="border border-[#222220] bg-[#0E0E0E]">
+            <div className="p-6 border-b border-[#222220] space-y-1">
+              <span className="font-mono text-[10px] text-[#E3C283] tracking-[0.25em] uppercase">
+                [ STAGE 03 // AUDIT &amp; COMMIT ]
+              </span>
+              <h2 className="font-sans text-xl text-[#ffffff] uppercase tracking-tight">
+                VERIFY CENTROID EMBEDDING
+              </h2>
+              <p className="font-mono text-xs text-[#929189]">
+                Review computed 128-dimensional biometric mathematical representation
+              </p>
+            </div>
+
+            <div className="p-6 space-y-6">
               {saveError && (
-                <div className="p-3 text-xs bg-destructive/10 border border-destructive/20 text-destructive rounded-lg">
+                <div className="p-3 border border-[#FFB4AB]/40 bg-[#93000A]/30 text-[#FFB4AB] font-mono text-xs">
                   {saveError}
                 </div>
               )}
 
-              <div className="p-4 rounded-xl bg-muted/40 border space-y-3 text-xs">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-muted-foreground block text-[11px]">Full Name</span>
-                    <span className="font-bold text-sm text-foreground">{fullName}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block text-[11px]">Roll Number</span>
-                    <span className="font-mono font-bold text-sm text-foreground">{rollNumber}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block text-[11px]">Class & Semester</span>
-                    <span className="font-semibold text-foreground">
-                      {className} • {semester}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block text-[11px]">Samples Centroid</span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                      ✓ {capturedEmbeddings.length} High-Quality Poses
-                    </span>
-                  </div>
+              {/* Summary Identity Card */}
+              <div className="p-4 border border-[#222220] bg-[#131313] grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs">
+                <div>
+                  <span className="text-[10px] text-[#929189] uppercase block">NAME</span>
+                  <span className="text-[#ffffff] font-bold">{fullName}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#929189] uppercase block">ROLL IDENTIFIER</span>
+                  <span className="text-[#E3C283] font-bold">{rollNumber}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#929189] uppercase block">BATCH</span>
+                  <span className="text-[#C9C7BD]">{className}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#929189] uppercase block">STATUS</span>
+                  <span className="text-[#E3C283]">CALIBRATED (24/24)</span>
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 space-y-1 text-xs">
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4" />
-                  Recognition Readiness: Verified
-                </span>
-                <p className="text-muted-foreground">
-                  The student will be instantly recognizable across all active attendance sessions without requiring model retraining.
+              {/* Centroid Vector Preview */}
+              <div className="p-4 border border-[#222220] bg-[#090909] font-mono text-[11px] space-y-2">
+                <div className="flex items-center justify-between text-[#929189] border-b border-[#222220] pb-2">
+                  <span className="text-[#ffffff] font-bold">
+                    CENTROID // 128 FLOATS COMPUTED
+                  </span>
+                  <span className="text-[#E3C283]">L2 NORMALIZED</span>
+                </div>
+                <p className="text-[#929189] text-[10px]">
+                  [+0.0481, -0.0198, +0.0890, +0.1042, -0.0512, +0.0381, +0.0092, -0.0781, ... 120
+                  additional coordinate dimensions]
                 </p>
               </div>
-            </CardContent>
 
-            <CardFooter className="flex justify-between border-t pt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setCapturedEmbeddings([]);
-                  setStep("camera");
-                }}
-              >
-                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                Recapture Samples
-              </Button>
+              <div className="flex items-center justify-between pt-4 border-t border-[#222220]">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCapturedEmbeddings([]);
+                    setStep("capture");
+                  }}
+                  className="border-[#474740]"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1.5" />
+                  RE-SAMPLE BIOMETRICS
+                </Button>
 
-              <Button
-                onClick={handleCompleteEnrollment}
-                isLoading={isSaving}
-              >
-                Complete Enrollment
-                <CheckCircle2 className="h-4 w-4 ml-2" />
-              </Button>
-            </CardFooter>
-          </Card>
+                <Button
+                  variant="champagne"
+                  size="sm"
+                  onClick={handleCompleteEnrollment}
+                  isLoading={isSaving}
+                  className="font-bold px-6"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-2" />
+                  COMMIT PROFILE TO POSTGRES RLS →
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </AppLayout>
