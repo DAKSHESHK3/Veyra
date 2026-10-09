@@ -48,7 +48,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
             <Sparkles className="h-4 w-4" />
           </div>
-          <span>SmartAttend</span>
+          <span>Veyra</span>
         </Link>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -72,9 +72,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
-                <span className="font-bold text-base tracking-tight block">SmartAttend</span>
+                <span className="font-bold text-base tracking-tight block">Veyra</span>
                 <span className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">
-                  Biometric Engine
+                  Verified Presence
                 </span>
               </div>
             </Link>
@@ -161,7 +161,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
                   <Sparkles className="h-4 w-4" />
                 </div>
-                <span className="font-bold text-lg">SmartAttend</span>
+                <span className="font-bold text-lg">Veyra</span>
               </div>
               <Button
                 variant="ghost"

@@ -27,7 +27,7 @@ export default function LandingPage() {
             <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-primary to-blue-500 flex items-center justify-center text-primary-foreground shadow-sm">
               <Sparkles className="h-5 w-5" />
             </div>
-            <span className="font-bold text-lg tracking-tight">SmartAttend</span>
+            <span className="font-bold text-lg tracking-tight">Veyra</span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -203,7 +203,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="mt-auto border-t border-border/60 py-8 px-6 text-center text-xs text-muted-foreground space-y-2">
-        <p>Smart Attendance System &copy; 2026. Built with Next.js, Supabase, and Browser Deep Metric Learning.</p>
+        <p>Veyra &copy; 2026. Verified Presence, Simplified. Built with Next.js, Supabase, and Browser Deep Metric Learning.</p>
         <div className="flex items-center justify-center gap-4 text-primary">
           <Link href="/docs/PRIVACY.md" className="hover:underline">Privacy Policy</Link>
           <Link href="/docs/SECURITY.md" className="hover:underline">Security Architecture</Link>

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Smart Attendance System — Biometric Recognition",
+  title: "Veyra — Verified Presence, Simplified",
   description:
-    "Fast, private, browser-accelerated facial recognition attendance platform with real-time biometric verification.",
+    "Next-generation, browser-side facial recognition attendance platform. Verified presence, simplified.",
 };
 
 export default function RootLayout({

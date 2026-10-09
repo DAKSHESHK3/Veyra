@@ -30,7 +30,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# legacy large binaries
-legacy/*.dat
-legacy/PreTrained_model/*.h5
-legacy/Model/*.MODEL
+# legacy folder
+/legacy/
+

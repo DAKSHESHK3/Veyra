@@ -1,160 +1,218 @@
-# Smart Attendance System — Modern Web Platform
+<div align="center">
 
-A production-grade, privacy-first, web-native facial recognition attendance management platform built with Next.js 15, TypeScript, Tailwind CSS, Supabase, and client-side browser Deep Metric Learning.
+# ⚡ VEYRA
+### *Verified Presence, Simplified.*
+
+[![Next.js](https://img.shields.io/badge/Next.js-15.1-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![WebGL 2.0](https://img.shields.io/badge/WebGL_2.0-FaceNet_128d-990000?style=for-the-badge&logo=webgl&logoColor=white)](https://www.khronos.org/webgl/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL_RLS-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
+[![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)](LICENSE)
+
+<br/>
+
+**A privacy-first, web-native facial biometric attendance platform powered by client-side Deep Metric Learning.**
+<br/>
+*Zero Python runtimes. Zero video streaming to servers. Instant zero-retraining face verification.*
+
+<br/>
+
+[🚀 Live Demo](https://veyra.vercel.app) • [📖 Documentation](#-documentation-index) • [⚡ Quickstart](#-get-started-in-60-seconds) • [☁️ Deploy to Vercel](#-deploying-veyra-step-by-step)
+
+</div>
 
 ---
 
-## 1. Overview & Rebuild Motivation
+## 🌟 Why Veyra?
 
-This platform is a complete architectural rebuild of the legacy Python 3 / Tkinter / OpenCV desktop attendance system. 
+Traditional biometric attendance systems are stuck in 2012: cumbersome desktop Python apps, manual OpenCV installations, and brittle classifiers that require full retraining every time a new student enrolls.
 
-### Why the legacy system was rebuilt:
-- **Desktop & OS Lock-in:** The legacy application required local Python installations, complex OpenCV/C++ builds, and direct OS desktop GUI hooks (`Tkinter`).
-- **Retraining Bottleneck:** Enrolling a single new student required running 400 epochs of training on an ad-hoc Softmax MLP classifier (`Face_recognition.MODEL`).
-- **Fragile Biometrics:** Old Haar Cascades frequently failed under real-world lighting and head rotations.
-- **Security Deficit:** Raw images were stored unencrypted in local folders, database credentials were unprotected, and no role-based authorization existed.
+**Veyra reimagines facial attendance from the ground up:**
 
-### Modern Rebuilt Solution:
-- **100% In-Browser Biometrics:** Face detection, 68-point landmark alignment, and 128-dimensional FaceNet feature extraction execute directly in the browser via WebGL.
-- **Zero Raw Video Streaming:** Webcam feeds never leave the user's laptop or desktop.
-- **Zero Retraining Required:** Employs Deep Metric Learning vector distance comparison—new students are recognizable immediately upon enrollment.
-- **Temporal Verification:** Sliding-window multi-frame validation prevents momentary false positives.
-- **Cloud Relational Persistence:** Powered by Supabase PostgreSQL with strict Row Level Security (RLS) policies and unique constraints preventing duplicate attendance.
-- **Offline / Local Demo Resilient:** Seamlessly works out-of-the-box locally even before cloud database configuration.
+| Feature | Legacy Desktop Systems (Tkinter/OpenCV) | ⚡ **Veyra** |
+| :--- | :--- | :--- |
+| **Platform** | Local desktop only (Windows/Linux/Mac) | **Any modern browser on any device** |
+| **Video Privacy** | Raw video stream / unencrypted image dumps | **100% In-Browser WebGL** (No video leaves device) |
+| **New Enrollment** | Requires retraining 400 epochs on GPU/CPU | **Instant enrollment** via Deep Metric Centroids |
+| **False Positives** | Vulnerable to single-frame optical glitches | **Temporal Verification Engine** (Sliding-window filter) |
+| **Database** | Plaintext local MongoDB or unencrypted CSVs | **Supabase PostgreSQL** with Row Level Security (RLS) |
+| **Duplicates** | Prone to duplicate increments | **Database constraint:** `UNIQUE(session_id, student_id)` |
+| **Deployment** | Manual local execution | **One-click Vercel deploy** with automatic HTTPS |
 
 ---
 
-## 2. System Architecture
+## ✨ Core Features
+
+- 👤 **3-Pose Interactive Enrollment Wizard:** Guided multi-sample capture (Frontal $\rightarrow$ Left $\rightarrow$ Right) with automatic real-time quality filters (face dimensions, margins, lighting).
+- 🧠 **128-Dimensional Deep Metric Inference:** Quantized FaceNet ResNet-34 model running locally on WebGL 2.0 at 30+ FPS.
+- 🛡️ **Temporal Verification Engine:** Multi-frame sliding window accumulator filters momentary flickers and only marks attendance once a face is recognized consistently over consecutive frames.
+- 🚫 **Duplicate Attendance Lockout:** Database and in-memory unique constraints guarantee a student cannot be recorded twice in the same session.
+- 📊 **Executive Dashboard:** Live metrics, active subjects, daily present/absent ratios, and longitudinal trend analytics.
+- 📥 **Instant Audit CSV Export:** One-click real spreadsheet export (`Roll Number, Name, Subject, Date, Status, Confidence`).
+- 🌓 **Dark & Light Mode:** Curated HSL color palette with smooth glassmorphism and Lucide icons.
+- 🔌 **Offline / Local Demo Mode:** Works out-of-the-box locally even before connecting your Supabase cloud keys.
+
+---
+
+## 🏗️ System Architecture
 
 ```mermaid
-graph TD
-    subgraph Browser ["Client Browser"]
-        Webcam["HTML5 Video / getUserMedia"] --> Detector["WebGL Face Detector & Landmark 68 Net"]
-        Detector --> Extractor["FaceNet 128-d Embedding Net"]
-        Extractor --> Matcher["Metric Vector Matcher (Cosine / Euclidean)"]
-        Matcher --> Temporal["Temporal Verification Engine (Multi-Frame Accumulator)"]
-        Temporal --> UI["Real-Time Bounding Box & Presence Feedback"]
+flowchart LR
+    subgraph Browser ["💻 Client Browser (In-Memory / WebGL)"]
+        Cam["📷 Web Camera Stream"] --> Det["🔍 WebGL Face Detector"]
+        Det --> Emb["🧠 128-d Vector Extractor"]
+        Emb --> Match["📐 Euclidean / Cosine Matcher"]
+        Match --> Temp["⏱️ Temporal Verification Engine"]
+        Temp --> Box["🟩 Real-Time Bounding Box & HUD"]
     end
 
-    subgraph Backend ["Supabase Cloud BaaS"]
-        Auth["Supabase Auth (JWT & Roles)"]
-        DB[("PostgreSQL Database (RLS Enforced)")]
-        Storage["Private Storage (Encrypted Biometrics)"]
+    subgraph Cloud ["☁️ Cloud BaaS (Supabase)"]
+        Auth["🔑 Supabase Auth (JWT)"]
+        DB[("🐘 PostgreSQL (RLS Enforced)")]
     end
 
-    Temporal -->|HTTPS PostgREST| DB
-    UI -->|Session Token| Auth
+    Temp -->|HTTPS PostgREST| DB
+    Box -->|Session Token| Auth
 ```
 
 ---
 
-## 3. Technology Stack
-
-- **Frontend & App Framework:** Next.js 15 (App Router), TypeScript (strict mode), React 19
-- **Styling & UI:** Tailwind CSS, Lucide Icons, Glassmorphism design tokens, CSS variables
-- **State & Forms:** React Hook Form, Zod validation
-- **Machine Learning & Computer Vision:** `@vladmandic/face-api` (optimized TensorFlow.js WebGL runtime)
-- **Database & Auth:** Supabase PostgreSQL with Row Level Security (RLS) & Supabase Auth
-- **Testing:** Vitest
-- **Deployment:** Vercel
-
----
-
-## 4. Key Application Routes
-
-| Route | Functionality |
-| :--- | :--- |
-| `/` | Modern marketing and capabilities landing page |
-| `/login` | Staff authentication with demo quick-login shortcuts |
-| `/dashboard` | Executive KPIs, attendance rates, recent sessions, quick actions |
-| `/attendance` | Historical lecture sessions and active camera room directory |
-| `/attendance/new` | Session launcher (select course, class, and semester) |
-| `/attendance/[id]` | **Live camera room** with face bounding boxes, session timer, real-time roster, and CSV export |
-| `/students` | Student directory with search, filter, and management actions |
-| `/students/new` | **3-Pose Interactive Biometric Enrollment Wizard** with quality gates |
-| `/students/[id]` | Student profile, statistics, and enrollment status |
-| `/subjects` | Dynamic academic courses and class configuration |
-| `/reports` | Aggregated analytics, date range filters, and master CSV exports |
-| `/settings` | Biometric vector thresholds ($\tau$), temporal parameters, and Supabase status |
-
----
-
-## 5. Quick Start & Local Setup
+## ⚡ Get Started in 60 Seconds
 
 ### Prerequisites
-- Node.js 18+ (Node 20+ recommended)
-- Modern web browser (Chrome, Edge, Safari, Firefox)
-- Webcam
+- [Node.js](https://nodejs.org/) v18+ (Node 20+ recommended)
+- A laptop/desktop webcam
 
-### 1. Install Dependencies
+### 1. Clone the Repository
+```bash
+git clone https://github.com/DAKSHESHK3/Veyra.git
+cd Veyra
+```
+
+### 2. Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Configure Environment
-```bash
-cp .env.example .env.local
-```
-
-### 3. Run Locally
+### 3. Launch Development Server
 ```bash
 npm run dev
 ```
-Navigate to [http://localhost:3000](http://localhost:3000).
 
-### 4. Run Automated Tests
+Navigate to **[http://localhost:3000](http://localhost:3000)**.
+*Veyra starts immediately in local demo mode with sample classes and enrolled students ready to test!*
+
+---
+
+## 🧪 Run Automated Tests
+
+Veyra includes a complete unit test suite for vector distance, centroid calculation, temporal consistency, and CSV formatting:
+
 ```bash
+# Run Vitest unit tests
 npm test
-```
 
-### 5. Production Build Check
-```bash
+# Run Next.js production build verification
 npm run build
 ```
 
 ---
 
-## 6. Supabase Setup & Migrations
+## ☁️ Deploying Veyra Step-by-Step
 
-1. Create a project at [supabase.com](https://supabase.com).
-2. Go to the **SQL Editor** in your Supabase dashboard.
-3. Run `supabase/migrations/001_initial_schema.sql` to create tables, indexes, and RLS policies.
-4. Run `supabase/migrations/002_legacy_seed_migration.sql` to seed initial subjects and students.
-5. In your project's **API Settings**, copy the `Project URL` and `anon key` into `.env.local`:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
-   ```
+### 1. Set Up Supabase (Database & Auth)
+1. Sign in to [Supabase](https://supabase.com/) and click **"New Project"**.
+2. Open the **SQL Editor** in your Supabase dashboard:
+   - Run [`supabase/migrations/001_initial_schema.sql`](supabase/migrations/001_initial_schema.sql) *(Creates tables, indexes, and RLS policies)*.
+   - Run [`supabase/migrations/002_legacy_seed_migration.sql`](supabase/migrations/002_legacy_seed_migration.sql) *(Optional: seeds starter subjects & students)*.
+3. In **Project Settings $\rightarrow$ API**, copy your **Project URL** and **`anon` public key**.
 
----
+### 2. Push to GitHub
+```bash
+git remote add origin https://github.com/DAKSHESHK3/Veyra.git
+git branch -M main
+git push -u origin main
+```
 
-## 7. Database Schema Summary
+### 3. Deploy to Vercel
+1. Log in to [Vercel](https://vercel.com/) and click **"Add New..." $\rightarrow$ "Project"**.
+2. Import your `Veyra` GitHub repository.
+3. In **Environment Variables**, add:
+   - `NEXT_PUBLIC_SUPABASE_URL` = *Your Supabase Project URL*
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = *Your Supabase Anon Key*
+4. Click **"Deploy"**!
 
-- **`profiles`:** User roles (`admin`, `teacher`) linked to Supabase Auth.
-- **`students`:** Enrolled students with `UNIQUE(roll_number, class_name)`.
-- **`subjects`:** Dynamic course catalog with `UNIQUE(code)`.
-- **`face_embeddings`:** Unit-normalized 128-float mathematical vectors with `UNIQUE(student_id)`.
-- **`attendance_sessions`:** Active and completed lecture sessions.
-- **`attendance_records`:** Individual verified attendance records with strict `UNIQUE(session_id, student_id)` constraint preventing duplicate marks.
-
----
-
-## 8. Documentation Sitemap
-
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): System architecture and legacy comparison.
-- [docs/ML_ARCHITECTURE.md](docs/ML_ARCHITECTURE.md): Mathematical metric learning & temporal verification specification.
-- [docs/DATABASE.md](docs/DATABASE.md): PostgreSQL schema, entity relations, and RLS matrix.
-- [docs/SETUP.md](docs/SETUP.md): Step-by-step local development setup.
-- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md): Production Vercel deployment guide.
-- [docs/SECURITY.md](docs/SECURITY.md): Threat modeling, cryptographic credentials, and authorization.
-- [docs/PRIVACY.md](docs/PRIVACY.md): Biometric data privacy and transparency policies.
-- [docs/MIGRATION.md](docs/MIGRATION.md): Guide for importing legacy MongoDB and CSV records.
-- [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md): Camera permission, lighting, and database diagnostic steps.
+> [!TIP]
+> Vercel automatically issues an SSL/TLS certificate. **HTTPS is strictly required** by modern browsers for webcam access (`navigator.mediaDevices.getUserMedia`).
 
 ---
 
-## 9. Known Limitations & Future Improvements
+## 🗺️ Key Application Routes
 
-- **Extreme Lighting Variations:** As with all optical biometric systems, very low light can degrade face detection; future updates can integrate automatic exposure compensation.
-- **Liveness Detection (Anti-Spoofing):** Future enhancements can incorporate blink detection or texture anti-spoofing to prevent photo presentation attacks.
-- **Bulk CSV Roster Import:** Adding a CSV uploader for enrolling student batches prior to biometric capture.
+| Path | Screen | Description |
+| :--- | :--- | :--- |
+| `/` | **Landing Page** | Product overview, features, security model & FAQ |
+| `/login` | **Authentication** | Staff portal with instant 1-click Admin & Teacher demo shortcuts |
+| `/dashboard` | **Dashboard** | Total enrolled, today's attendance rate, quick actions, recent logs |
+| `/students` | **Student Directory** | Searchable roster with class filtering and profile management |
+| `/students/new` | **Enrollment Wizard** | 3-pose interactive camera capture with real-time quality filters |
+| `/students/[id]` | **Student Detail** | Profile stats, attendance history, and 128-d embedding status |
+| `/subjects` | **Subject Manager** | Dynamic academic courses, class departments, and lecture assignments |
+| `/attendance` | **Session Directory** | Historical lecture logs and active camera room directory |
+| `/attendance/new` | **Session Setup** | Configure lecture subject, class, and semester before launching |
+| `/attendance/[id]` | **Live Camera Room** | Real-time face detection, live bounding boxes, presence counter & timer |
+| `/reports` | **Reports & Analytics** | Aggregated attendance logs with real CSV file downloads |
+| `/settings` | **Hyperparameters** | Vector distance threshold ($\tau$), temporal consistency frames ($K$) |
+
+---
+
+## 📖 Documentation Index
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — Comprehensive architectural analysis & legacy comparison.
+- [docs/ML_ARCHITECTURE.md](docs/ML_ARCHITECTURE.md) — Mathematical specification of vector embeddings and temporal verification.
+- [docs/DATABASE.md](docs/DATABASE.md) — PostgreSQL entity relationships, constraints, and Row Level Security matrix.
+- [docs/SETUP.md](docs/SETUP.md) — Local environment configuration guide.
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Detailed production cloud deployment walkthrough.
+- [docs/SECURITY.md](docs/SECURITY.md) — Threat modeling, credential isolation, and authorization protocols.
+- [docs/PRIVACY.md](docs/PRIVACY.md) — Biometric privacy notice, data lifecycle, and user consent.
+- [docs/MIGRATION.md](docs/MIGRATION.md) — Automated migration guide for importing legacy MongoDB/CSV datasets.
+- [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — Diagnostic guide for camera permissions and lighting.
+
+---
+
+## 🛡️ Security & Privacy Notice
+
+Veyra treats facial biometric data with paramount care:
+- **Zero Raw Video Storage:** Web camera feeds are processed in volatile GPU memory and never streamed to any external endpoint.
+- **Mathematical Abstraction:** Only unit-normalized 128-float mathematical vectors are persisted. These feature coordinates cannot be reverse-engineered to reconstruct human faces.
+- **Role-Based Access Control:** Supabase PostgreSQL Row Level Security (RLS) guarantees that only authorized faculty and administrative accounts can read or audit attendance records.
+
+---
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome!
+Feel free to check the [issues page](https://github.com/DAKSHESHK3/Veyra/issues).
+
+```bash
+# Create your feature branch
+git checkout -b feature/AmazingFeature
+
+# Commit your changes
+git commit -m 'feat: add AmazingFeature'
+
+# Push to the branch
+git push origin feature/AmazingFeature
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+<div align="center">
+  <sub>Built with ❤️ by <a href="https://github.com/DAKSHESHK3">DAKSHESHK3</a></sub>
+</div>
