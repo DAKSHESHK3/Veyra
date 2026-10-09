@@ -94,8 +94,18 @@ export class FaceMatcher {
 
     if (!bestItem) return null;
 
-    // Confidence mapping: 0 distance -> 100%, threshold distance -> 50%, 2x threshold -> 0%
-    const confidence = Math.max(0, Math.min(1, 1 - minDistance / (this.distanceThreshold * 1.5)));
+    // Realistic confidence scaling for FaceNet Euclidean distance:
+    // When distance = 0 -> 100% confidence
+    // When distance = distanceThreshold (0.55) -> 75% confidence
+    let confidence = 0;
+    if (minDistance <= this.distanceThreshold) {
+      confidence = 1 - 0.25 * (minDistance / this.distanceThreshold);
+    } else {
+      confidence = Math.max(
+        0,
+        0.75 - 0.75 * ((minDistance - this.distanceThreshold) / this.distanceThreshold)
+      );
+    }
 
     if (minDistance <= this.distanceThreshold) {
       return {

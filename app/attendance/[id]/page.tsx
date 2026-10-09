@@ -60,7 +60,7 @@ export default function LiveAttendanceRoomPage() {
   // Engines Refs
   const matcherRef = useRef<FaceMatcher | null>(null);
   const temporalRef = useRef<TemporalVerificationEngine>(
-    new TemporalVerificationEngine({ windowSize: 8, requiredMatches: 5, minAverageConfidence: 0.65 })
+    new TemporalVerificationEngine({ windowSize: 6, requiredMatches: 3, minAverageConfidence: 0.55 })
   );
 
   // Load Session and Enrolled Matchers
@@ -227,9 +227,10 @@ export default function LiveAttendanceRoomPage() {
             ctx.strokeRect(x, y, w, h);
 
             // Draw Label Badge
+            const progress = temporalRef.current.getProgress(match.studentId);
             const label = isVerified
               ? `✓ ${match.name} (${Math.round(match.confidence * 100)}%)`
-              : `${match.name} (Verifying...)`;
+              : `${match.name} (${progress > 0 ? `${progress}%` : "Verifying..."})`;
             ctx.fillStyle = isVerified ? "rgba(16, 185, 129, 0.85)" : "rgba(59, 130, 246, 0.85)";
             ctx.fillRect(x, Math.max(0, y - 26), ctx.measureText(label).width + 16, 24);
             ctx.fillStyle = "#ffffff";

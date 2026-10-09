@@ -13,9 +13,9 @@ export class TemporalVerificationEngine {
 
   constructor(config?: Partial<TemporalVerificationConfig>) {
     this.config = {
-      windowSize: config?.windowSize ?? 8,
-      requiredMatches: config?.requiredMatches ?? 5,
-      minAverageConfidence: config?.minAverageConfidence ?? 0.65,
+      windowSize: config?.windowSize ?? 6,
+      requiredMatches: config?.requiredMatches ?? 3,
+      minAverageConfidence: config?.minAverageConfidence ?? 0.55,
     };
   }
 
