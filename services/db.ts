@@ -187,25 +187,33 @@ export const dbService = {
     embeddingVector?: number[]
   ): Promise<Student> {
     if (isSupabaseConfigured() && supabase) {
-      const { data: student, error: sErr } = await supabase
-        .from("students")
-        .insert({
-          ...studentData,
-          is_active: studentData.is_active ?? true,
-        })
-        .select()
-        .single();
-      if (sErr) throw new Error(sErr.message);
+      try {
+        const { data: student, error: sErr } = await supabase
+          .from("students")
+          .insert({
+            ...studentData,
+            is_active: studentData.is_active ?? true,
+          })
+          .select()
+          .single();
+        if (sErr) throw new Error(sErr.message);
 
-      if (embeddingVector && embeddingVector.length === 128) {
-        await supabase.from("face_embeddings").insert({
-          student_id: student.id,
-          embedding: embeddingVector,
-          sample_count: 30,
-          model_version: "facenet-128d",
-        });
+        if (embeddingVector && embeddingVector.length === 128) {
+          const { error: eErr } = await supabase.from("face_embeddings").insert({
+            student_id: student.id,
+            embedding: embeddingVector,
+            sample_count: 30,
+            model_version: "facenet-128d",
+          });
+          if (eErr) {
+            console.warn("Failed to save embedding to Supabase:", eErr.message);
+          }
+        }
+        return student;
+      } catch (err: any) {
+        console.warn("Supabase createStudent failed, storing locally:", err?.message || err);
+        // Fall through to local storage persistence
       }
-      return student;
     }
 
     const current = getLocal<Student[]>(LOCAL_STORAGE_KEYS.STUDENTS, INITIAL_STUDENTS);
@@ -443,18 +451,22 @@ export const dbService = {
     confidence: number
   ): Promise<AttendanceRecord> {
     if (isSupabaseConfigured() && supabase) {
-      const { data, error } = await supabase
-        .from("attendance_records")
-        .insert({
-          session_id: sessionId,
-          student_id: studentId,
-          status: "present",
-          confidence: Number(confidence.toFixed(4)),
-        })
-        .select("*, student:students(*)")
-        .single();
-      if (error) throw new Error(error.message);
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from("attendance_records")
+          .insert({
+            session_id: sessionId,
+            student_id: studentId,
+            status: "present",
+            confidence: Number(confidence.toFixed(4)),
+          })
+          .select("*, student:students(*)")
+          .single();
+        if (!error && data) return data;
+        if (error) console.warn("Supabase recordAttendance notice:", error.message);
+      } catch (err: any) {
+        console.warn("Supabase recordAttendance offline fallback:", err?.message || err);
+      }
     }
 
     const records = getLocal<AttendanceRecord[]>(LOCAL_STORAGE_KEYS.RECORDS, []);
